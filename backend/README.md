@@ -221,6 +221,20 @@ NODE_ENV=development
 - Authentication uses JWT in the `Authorization` header as `Bearer <token>`.
 - See individual route files for detailed API endpoints.
 
+## Testing
+
+All user and recruiter routes have been tested using Postman:
+
+- `POST /register`
+- `POST /login`
+- `GET /logout`
+- `POST /forgot-password`
+- `POST /reset-password/:token`
+- `GET /profile`
+- `GET /verify-email/:token`
+
+All the above routes are working as expected.✔️
+
 ---
 
 For more details, see the code in the respective folders and files.

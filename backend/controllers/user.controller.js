@@ -173,7 +173,9 @@ export const logoutUser = async (req, res) => {
             userId = decoded.id;
         }
 
-        const blacklistedToken = new BlacklistToken({ token, userId });
+        const blacklistedToken = new BlacklistToken({ token, userId,
+            userType: 'User', // Assuming the user type is 'User'
+         });
         await blacklistedToken.save();
 
         res.clearCookie('token');

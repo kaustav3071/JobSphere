@@ -41,11 +41,11 @@ export const authenticateRecruiter = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (!decoded) return res.status(401).json({ message: "Unauthorized" });
+        if (!decoded) return res.status(401).json({ message: "Unauthorized...." });
 
         const recruiter = await RecruiterModel.findById(decoded._id);
         if (!recruiter) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({ message: "Unauthorizedddd" });
         }
 
         req.recruiter = recruiter;

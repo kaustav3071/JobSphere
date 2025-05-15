@@ -82,10 +82,10 @@ recruiterSchema.pre("save", async function (next) {
   next();
 });
 
-recruiterSchema.methods.getJWTToken = function () {
+recruiterSchema.methods.generateAuthToken= function () {
   const secret = process.env.JWT_SECRET || "default_secret_key";
   const expiresIn = process.env.JWT_EXPIRES_IN || "1h";
-  return jwt.sign({ id: this._id }, secret, {
+  return jwt.sign({ _id: this._id }, secret, {
     expiresIn,
   });
 };
@@ -93,6 +93,10 @@ recruiterSchema.methods.getJWTToken = function () {
 recruiterSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
+
+recruiterSchema.statics.hashPassword = async function (password) {
+  return await bcrypt.hash(password, 10);
+};  
 
 recruiterSchema.methods.getResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");

@@ -44,8 +44,7 @@ recruiterRouter.post(
 );
 
 recruiterRouter.post(
-    '/reset-password',
-    body('token').notEmpty().withMessage('Token is required'),
+    '/reset-password/:token',
     body('password')
         .isLength({ min: 8 })
         .withMessage('Password must be at least 8 characters long'),

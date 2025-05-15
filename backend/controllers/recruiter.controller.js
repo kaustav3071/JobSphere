@@ -63,7 +63,7 @@ export const registerRecruiter = async (req, res) => {
         await transporter.sendMail(mailOptions);
 
         // Generate a token
-        const token = newRecruiter.getJWTToken();
+        const token = newRecruiter.generateAuthToken();
 
         res.cookie('token', token, {
             httpOnly: true,
@@ -130,12 +130,20 @@ export const loginRecruiter = async (req, res) => {
 
 export const logoutRecruiter = async (req, res) => {
     try{
-        const token = req.headers.authorization?.split(' ')[1];
+        let token = req.headers.authorization?.split(' ')[1];
+        if (!token && req.cookies?.token) {
+            token = req.cookies.token;
+        }
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });
         }
+        
 
-        const blacklistedToken = new BlacklistToken({ token });
+        const blacklistedToken = new BlacklistToken({ 
+            token,
+            userId: req.recruiter._id,
+            userType: "Recruiter", // Specify the model type
+         });
         await blacklistedToken.save();
 
         res.clearCookie('token');
@@ -149,7 +157,7 @@ export const logoutRecruiter = async (req, res) => {
 
 export const getRecruiterProfile = async (req, res) => {
     try {
-        const recruiter = await RecruiterModel.findById(req.user._id).select('-password');
+        const recruiter = await RecruiterModel.findById(req.recruiter._id).select('-password');
         if (!recruiter) {
             return res.status(404).json({ message: 'Recruiter not found' });
         }
