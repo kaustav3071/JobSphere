@@ -17,7 +17,7 @@ export const authenticateUser = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded) return res.status(401).json({ message: "Unauthorized" });
 
-        const user = UserModel.findById(decoded._id);
+        const user = await UserModel.findById(decoded._id);
         if (!user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -43,7 +43,7 @@ export const authenticateRecruiter = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded) return res.status(401).json({ message: "Unauthorized" });
 
-        const recruiter = RecruiterModel.findById(decoded._id);
+        const recruiter = await RecruiterModel.findById(decoded._id);
         if (!recruiter) {
             return res.status(401).json({ message: "Unauthorized" });
         }
