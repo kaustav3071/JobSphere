@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema(
         validator: function (v) {
           return validator.isURL(v, {
             protocols: ["http", "https"],
-            require_tld: true,
+            require_tld: false,
             require_protocol: true,
             require_valid_protocol: true,
           });
@@ -64,6 +64,13 @@ const userSchema = new mongoose.Schema(
       enum: ["job_seeker"],
       default: "job_seeker",
       required: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
     },
     resetPasswordToken: {
       type: String,
@@ -112,6 +119,7 @@ userSchema.methods.getResetPasswordToken = function () {
 };
 
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-export default User;
+const UserModel = mongoose.models.User || mongoose.model("User", userSchema);
+
+export default UserModel;

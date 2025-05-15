@@ -6,8 +6,9 @@ import {
   resetPassword,
   getUserProfile,
 } from "../controllers/user.controller.js";
+import { verifyEmail } from "../controllers/email.controller.js";
 import { authenticateUser } from "../middlewares/auth.js";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import express from "express";
 import multer from "multer";
 
@@ -49,7 +50,7 @@ userRouter.post(
 );
 
 
-userRouter.post("/logout", authenticateUser, logoutUser);
+userRouter.get("/logout", authenticateUser, logoutUser);
 
 
 userRouter.post(
@@ -60,8 +61,7 @@ userRouter.post(
 
 
 userRouter.post(
-  "/reset-password",
-  body("token").notEmpty().withMessage("Token is required"),
+  "/reset-password/:token",
   body("password") // Align with controller
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
@@ -70,5 +70,7 @@ userRouter.post(
 
 
 userRouter.get("/profile", authenticateUser, getUserProfile);
+
+userRouter.get("/verify-email/:token", verifyEmail);
 
 export default userRouter;

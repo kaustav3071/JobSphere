@@ -56,6 +56,13 @@ const recruiterSchema = new mongoose.Schema(
       default: "recruiter",
       required: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+    },
     resetPasswordToken: {
       type: String,
     },
@@ -98,6 +105,6 @@ recruiterSchema.methods.getResetPasswordToken = function () {
 };
 
 
-const Recruiter = mongoose.models.Recruiter || mongoose.model("Recruiter", recruiterSchema);
+const RecruiterModel = mongoose.models.Recruiter || mongoose.model("Recruiter", recruiterSchema);
 
-export default Recruiter;
+export default RecruiterModel;

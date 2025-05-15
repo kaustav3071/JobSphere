@@ -1,4 +1,4 @@
-import Recruiter from '../models/recruiter.model.js';
+import RecruiterModel from '../models/recruiter.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -21,6 +21,8 @@ export const registerRecruiter = async (req, res) => {
             return res.status(400).json({ message: 'A recruiter with this email already exists' });
         }
 
+        const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
         // Create a new recruiter
         const newRecruiter = new RecruiterModel({
             name,
@@ -30,10 +32,36 @@ export const registerRecruiter = async (req, res) => {
             companyName,
             address,
             role: 'recruiter',
+            isVerified: false,
+            emailVerificationToken,
         });
 
         // Save the recruiter to the database
         await newRecruiter.save();
+
+        const verificationUrl = `http://localhost:5000/recruiters/verify-email/${emailVerificationToken}`;
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+        from: `"JobConnect" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Verify your email',
+        html: `
+            <h3>Email Verification</h3>
+            <p>Hello ${name},</p>
+            <p>Please click the following link to verify your email:</p>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+        `,
+        };
+
+        await transporter.sendMail(mailOptions);
+
         // Generate a token
         const token = newRecruiter.getJWTToken();
 
@@ -68,6 +96,10 @@ export const loginRecruiter = async (req, res) => {
         const isMatch = await recruiter.comparePassword(password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (!recruiter.isVerified) {
+            return res.status(400).json({ message: 'Please verify your email before logging in' });
         }
 
         // Generate a token

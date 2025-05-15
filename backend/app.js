@@ -6,7 +6,7 @@ import jobRouter from './routes/job.routes.js';
 import recruiterRouter from './routes/recruiter.routes.js';
 import applicationRouter from './routes/application.routes.js';
 import chatRouter from './routes/chat.routes.js';
-// import { connectDB } from './db/db.js'
+import { connectDB } from './db/db.js'
 import resumeScoreRouter from './routes/resume.routes.js';
 
 config();
@@ -17,7 +17,7 @@ app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
-// connectDB();
+connectDB();
 
 app.use('/users', userRouter);
 

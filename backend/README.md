@@ -131,6 +131,89 @@ GMAIL_PASS=your_gmail_app_password
 NODE_ENV=development
 ```
 
+
+
+## API Endpoints
+
+### User Routes (`/users`)
+- `POST /register`  
+  Register a new user (job seeker). Requires name, email, password, phone, address, and resume file upload.
+- `POST /login`  
+  Login as a user. Requires email and password.
+- `GET /logout`  
+  Logout the current user (JWT token blacklisting).
+- `POST /forgot-password`  
+  Request a password reset email.
+- `POST /reset-password`  
+  Reset password using a token.
+- `GET /profile`  
+  Get the authenticated user's profile.
+- `GET /verify-email/:token`  
+  Verify user email using the token sent via email.
+
+### Recruiter Routes (`/recruiters`)
+- `POST /register`  
+  Register a new recruiter. Requires name, email, password, phone, company name, and address.
+- `POST /login`  
+  Login as a recruiter. Requires email and password.
+- `GET /logout`  
+  Logout the current recruiter (JWT token blacklisting).
+- `GET /profile`  
+  Get the authenticated recruiter's profile.
+- `POST /forgot-password`  
+  Request a password reset email.
+- `POST /reset-password`  
+  Reset password using a token.
+- `GET /verify-email/:token`  
+  Verify recruiter email using the token sent via email.
+
+### Job Routes (`/jobs`)
+- `POST /`  
+  Create a new job (recruiter only).
+- `GET /`  
+  Get all jobs (with optional filters: status, location, jobType, role, pagination).
+- `GET /:id`  
+  Get a job by its ID.
+- `PUT /:id`  
+  Update a job (recruiter only, must be the owner).
+- `DELETE /:id`  
+  Delete a job (recruiter only, must be the owner).
+
+### Application Routes (`/applications`)
+- `POST /`  
+  Apply to a job (user only).
+- `GET /`  
+  Get all applications for jobs posted by the recruiter (recruiter only).
+- `GET /:applicationId`  
+  Get a specific application by ID (user or recruiter).
+- `PUT /:applicationId/status`  
+  Update the status of an application (recruiter only).
+- `DELETE /:applicationId`  
+  Delete an application (user or recruiter).
+
+### Resume Score Routes (`/resume-scores`)
+- `POST /`  
+  Generate a resume score for an application (recruiter only).
+- `GET /:applicationId`  
+  Get the resume score for a specific application (user or recruiter).
+
+### Chat Routes (`/chats`)
+- `POST /`  
+  Create a chat between a user and a recruiter.
+- `GET /`  
+  Get all chats for the authenticated user or recruiter.
+- `GET /:chatId`  
+  Get a specific chat by ID (must be a participant).
+- `POST /:chatId/message`  
+  Send a message in a chat (must be a participant).
+
+---
+
+**Note:**  
+- Most routes require authentication via JWT in the `Authorization` header as `Bearer <token>`.
+- See the respective route files in [`routes/`](routes/) for validation and detailed logic.
+
+
 ## Notes
 
 - Resume files are stored in `uploads/resumes/`.

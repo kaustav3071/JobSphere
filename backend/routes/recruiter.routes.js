@@ -6,6 +6,7 @@ import {
     forgotPassword,
     resetPassword,
 } from '../controllers/recruiter.controller.js';
+import { verifyRecruiterEmail } from '../controllers/email.controller.js';
 import { authenticateRecruiter } from '../middlewares/auth.js';
 import { body } from 'express-validator';
 import express from 'express';
@@ -33,7 +34,7 @@ recruiterRouter.post(
     loginRecruiter
 );
 
-recruiterRouter.post('/logout', authenticateRecruiter, logoutRecruiter);
+recruiterRouter.get('/logout', authenticateRecruiter, logoutRecruiter);
 recruiterRouter.get('/profile', authenticateRecruiter, getRecruiterProfile);
 
 recruiterRouter.post(
@@ -50,5 +51,7 @@ recruiterRouter.post(
         .withMessage('Password must be at least 8 characters long'),
     resetPassword
 );
+
+recruiterRouter.get('/verify-email/:token', verifyRecruiterEmail);
 
 export default recruiterRouter;

@@ -4,13 +4,13 @@ import BlacklistToken from '../models/blacklistToken.model.js';
 import UserModel from '../models/user.model.js';
 import RecruiterModel from '../models/recruiter.model.js';
 
-export const authenticateUser = (req, res, next) => {
+export const authenticateUser = async (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
     }
     try {
-        const isBlacklisted = BlacklistToken.findOne({ token });
+        const isBlacklisted = await BlacklistToken.findOne({ token });
         if (isBlacklisted) {
             return res.status(401).json({ message: "Token is blacklisted" });
         }
@@ -19,7 +19,7 @@ export const authenticateUser = (req, res, next) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const user = UserModel.findById(decoded._id);
+        const user = await UserModel.findById(decoded._id);
         if (!user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
@@ -33,13 +33,13 @@ export const authenticateUser = (req, res, next) => {
     }
 };
 
-export const authenticateRecruiter = (req, res, next) => {
+export const authenticateRecruiter = async (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
     }
     try {
-        const isBlacklisted = BlacklistToken.findOne({ token });
+        const isBlacklisted = await BlacklistToken.findOne({ token });
         if (isBlacklisted) {
             return res.status(401).json({ message: "Token is blacklisted" });
         }
@@ -48,7 +48,7 @@ export const authenticateRecruiter = (req, res, next) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        const recruiter = RecruiterModel.findById(decoded._id);
+        const recruiter = await RecruiterModel.findById(decoded._id);
         if (!recruiter) {
             return res.status(401).json({ message: "Unauthorized" });
         }

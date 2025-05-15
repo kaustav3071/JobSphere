@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
     const { name, email, password, phone, address} = req.body;
-    const resume = req.file ? `uploads/resumes/${req.file.filename}` : null;
+    const resume = req.file ? `${req.protocol}://${req.get('host')}/uploads/resumes/${req.file.filename}`: null;
 
     try {
 
@@ -38,6 +38,8 @@ export const registerUser = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({ message: 'A user with this email already exists' });
         }
+
+        const emailVerificationToken = crypto.randomBytes(32).toString('hex');
 
         // Create a new user
         const newUser = new UserModel({
@@ -48,10 +50,36 @@ export const registerUser = async (req, res) => {
             address,
             resume: resume || '',
             role:'job_seeker',
+            isVerified: false,
+            emailVerificationToken,
         });
 
         // Save the user to the database
         await newUser.save();
+
+        const verificationUrl = `http://localhost:5000/user/verify-email/${emailVerificationToken}`;
+
+        const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+        });
+
+        const mailOptions = {
+        from: `"JobConnect" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Verify your email',
+        html: `
+            <h3>Email Verification</h3>
+            <p>Hello ${name},</p>
+            <p>Please click the following link to verify your email:</p>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+        `,
+        };
+
+        await transporter.sendMail(mailOptions);
         // Generate a token
         const token = newUser.generateAuthToken();
 
@@ -63,7 +91,7 @@ export const registerUser = async (req, res) => {
 
         // Send the token in the response
         res.status(201).json({
-            message: 'User registered successfully',
+            message: 'User registered successfully and verification email sent',
             token,
         });
     }
@@ -91,6 +119,10 @@ export const loginUser = async (req, res) => {
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (!user.isVerified) {
+            return res.status(400).json({ message: 'Please verify your email before logging in' });
         }
 
         // Generate a token
@@ -123,26 +155,35 @@ export const loginUser = async (req, res) => {
 }
 
 export const logoutUser = async (req, res) => {
-    try{
-        const token = req.headers.authorization?.split(' ')[1];
+    try {
+        // Try to get token from Authorization header or cookie
+        let token = req.headers.authorization?.split(' ')[1];
+        if (!token && req.cookies?.token) {
+            token = req.cookies.token;
+        }
         if (!token) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const blacklistedToken = new BlacklistToken({ token, userId: req.user._id });
+        // req.user may not be set if using only cookies, so decode token if needed
+        let userId = req.user?._id;
+        if (!userId) {
+            const jwt = (await import('jsonwebtoken')).default;
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            userId = decoded.id;
+        }
+
+        const blacklistedToken = new BlacklistToken({ token, userId });
         await blacklistedToken.save();
 
-        // Clear the cookie
         res.clearCookie('token');
 
         res.status(200).json({ message: 'User logged out successfully' });
-    }
-    catch (error) {
+    } catch (error) {
         console.error('Error logging out user:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 export const getUserProfile = async (req, res) => {
     try {
         const user = await UserModel.findById(req.user._id).select('-password');
@@ -180,12 +221,12 @@ export const forgotPassword = async (req, res) => {
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
-                user: process.env.GMAIL_USER,
-                pass: process.env.GMAIL_PASS,
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
             },
         });
         const mailOptions = {
-            from: process.env.GMAIL_USER,
+            from: process.env.EMAIL_USER,
             to: email,
             subject: 'Password Reset Request',
             text: message,
