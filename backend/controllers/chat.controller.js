@@ -12,7 +12,7 @@ export const createChat = async (req, res) => {
   }
 
   const { participants } = req.body;
-  const requester = req.user || req.recruiter; 
+  const requester = req.user || req.recruiter;
   const requesterModel = req.user ? 'User' : 'Recruiter';
 
   try {
@@ -31,14 +31,12 @@ export const createChat = async (req, res) => {
         { 'participants.model': participants[1].model },
       ],
     });
+
     if (existingChat) {
       return res.status(400).json({ message: 'A chat between these participants already exists', chat: existingChat });
     }
 
-    const newChat = new Chat({
-      participants,
-    });
-
+    const newChat = new Chat({ participants });
     await newChat.save();
 
     await newChat.populate([
@@ -149,6 +147,13 @@ export const sendMessage = async (req, res) => {
       { path: 'messages.sender', match: { model: 'User' }, select: 'name email', model: 'User' },
       { path: 'messages.sender', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
     ]);
+
+    //Emit the message using Socket.IO
+    const io = req.app.locals.io;
+    io.to(chatId).emit('receiveMessage', {
+      chatId,
+      message: chat.messages[chat.messages.length - 1],
+    });
 
     res.status(200).json({ message: 'Message sent successfully', chat });
   } catch (error) {
