@@ -4,10 +4,11 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "nodemon server.js"
   },
   "dependencies": {
     "accepts": "^2.0.0",
@@ -35,6 +36,7 @@
     "cookie-parser": "^1.4.7",
     "cookie-signature": "^1.2.2",
     "core-util-is": "^1.0.3",
+    "cors": "^2.8.5",
     "debug": "^4.4.1",
     "depd": "^2.0.0",
     "dotenv": "^16.5.0",
@@ -48,6 +50,7 @@
     "escape-html": "^1.0.3",
     "etag": "^1.8.1",
     "express": "^5.1.0",
+    "express-validator": "^7.2.1",
     "fill-range": "^7.1.1",
     "finalhandler": "^2.1.0",
     "forwarded": "^0.2.0",
@@ -60,6 +63,7 @@
     "has-flag": "^3.0.0",
     "has-symbols": "^1.1.0",
     "hasown": "^2.0.2",
+    "http": "^0.0.1-security",
     "http-errors": "^2.0.0",
     "iconv-lite": "^0.6.3",
     "ignore-by-default": "^1.0.1",
@@ -101,6 +105,7 @@
     "negotiator": "^1.0.0",
     "node-addon-api": "^8.3.1",
     "node-gyp-build": "^4.8.4",
+    "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
     "normalize-path": "^3.0.0",
     "object-assign": "^4.1.1",
