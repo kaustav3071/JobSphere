@@ -221,19 +221,52 @@ NODE_ENV=development
 - Authentication uses JWT in the `Authorization` header as `Bearer <token>`.
 - See individual route files for detailed API endpoints.
 
-## Testing
+## ✅ API Testing Summary
 
-All user and recruiter routes have been tested using Postman:
+All **User**, **Recruiter**, and **Job** routes have been thoroughly tested using **Postman**. The following endpoints were verified and confirmed to be working as expected:
 
-- `POST /register`
-- `POST /login`
-- `GET /logout`
-- `POST /forgot-password`
-- `POST /reset-password/:token`
-- `GET /profile`
-- `GET /verify-email/:token`
+---
 
-All the above routes are working as expected.✔️
+### 🔐 Authentication Routes
+- `POST /register` – Register a new user/recruiter  
+- `POST /login` – Login with email and password  
+- `GET /logout` – Logout the current session  
+
+---
+
+### 🔁 Password Management
+- `POST /forgot-password` – Request password reset link  
+- `POST /reset-password/:token` – Reset password using token  
+
+---
+
+### 👤 Profile & Verification
+- `GET /profile` – Retrieve user/recruiter profile  
+  _Middleware_: `authenticateRecruiter`
+- `GET /verify-email/:token` – Verify email using token  
+
+---
+
+### 💼 Job Management Routes
+> These routes are protected and require recruiter authentication.
+
+- `POST /jobs` – Create a new job  
+  _Middleware_: `authenticateRecruiter`, `jobValidationRules`  
+- `GET /jobs` – Retrieve all active jobs  
+- `GET /jobs/:id` – Get a job by ID  
+- `PUT /jobs/:id` – Update a job by ID  
+  _Middleware_: `authenticateRecruiter`, `jobValidationRules`  
+- `DELETE /jobs/:id` – Delete a job by ID  
+  _Middleware_: `authenticateRecruiter`  
+
+---
+
+✅ **User Routes testing Done**
+✅ **Recruiter Routes testing Done**
+✅ **Job Routes testing Done**
+✅ **All routes tested successfully with expected responses.**
+
+
 
 ---
 

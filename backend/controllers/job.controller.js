@@ -1,4 +1,4 @@
-import Job from '../models/job.model.js';
+import JobModel from '../models/job.model.js';
 import { validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 
