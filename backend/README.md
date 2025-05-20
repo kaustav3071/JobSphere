@@ -264,8 +264,7 @@ All **User**, **Recruiter**, and **Job** routes have been thoroughly tested usin
 ✅ **User Routes testing Done**
 ✅ **Recruiter Routes testing Done**
 ✅ **Job Routes testing Done**
-✅ **All routes tested successfully with expected responses.**
-
+✅ **Application Routes testing Done**
 
 
 ---

@@ -5,7 +5,7 @@ import {
     updateApplicationStatus,
     deleteApplication,
 } from '../controllers/application.controller.js';
-import { authenticateUser, authenticateRecruiter } from '../middlewares/auth.js';
+import { authenticateUser, authenticateRecruiter, authenticateAny } from '../middlewares/auth.js';
 import { body } from 'express-validator';
 import express from 'express';
 
@@ -28,13 +28,13 @@ applicationRouter.post('/', authenticateUser, applicationValidationRules, create
 applicationRouter.get('/', authenticateRecruiter, getAllApplications);
 
 
-applicationRouter.get('/:applicationId', getApplicationById);
+applicationRouter.get('/:applicationId',authenticateAny, getApplicationById);
 
 
 applicationRouter.put('/:applicationId/status', authenticateRecruiter, statusValidationRules, updateApplicationStatus);
 
 
-applicationRouter.delete('/:applicationId', deleteApplication);
+applicationRouter.delete('/:applicationId', authenticateAny, deleteApplication);
 
 
 export default applicationRouter;

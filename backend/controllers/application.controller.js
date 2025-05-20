@@ -1,4 +1,4 @@
-import Application from '../models/application.model.js';
+import ApplicationModel from '../models/application.model.js';
 import dotenv from 'dotenv';
 import { validationResult } from 'express-validator';
 import UserModel from '../models/user.model.js';

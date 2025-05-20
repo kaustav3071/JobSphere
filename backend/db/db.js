@@ -3,10 +3,7 @@ import { connect } from 'mongoose';
 
 async function connectDB() {
   try {
-    await connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await connect(process.env.MONGODB_URI);
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
