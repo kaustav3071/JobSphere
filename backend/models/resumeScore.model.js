@@ -6,7 +6,6 @@ const ResumeScoreSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Application",
       required: [true, "Application ID is required"],
-      unique: true,
     },
     score: {
       type: Number,
@@ -31,7 +30,7 @@ const ResumeScoreSchema = new mongoose.Schema(
 );
 
 
-ResumeScoreSchema.index({ applicationId: 1 }, { unique: true });
+ResumeScoreSchema.index({ application: 1 }, { unique: true });
 
 ResumeScoreSchema.pre('save', async function (next) {
   try {

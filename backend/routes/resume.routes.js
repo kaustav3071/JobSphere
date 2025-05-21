@@ -4,7 +4,7 @@ import {
   createResumeScore,
   getResumeScoreByApplication,
 } from '../controllers/resumeScore.controller.js';
-import { authenticateUser, authenticateRecruiter } from '../middlewares/auth.js';
+import { authenticateUser, authenticateRecruiter, authenticateAny } from '../middlewares/auth.js';
 
 const resumeScoreRouter = express.Router();
 
@@ -21,6 +21,6 @@ const resumeScoreValidationRules = [
 resumeScoreRouter.post('/', authenticateRecruiter, resumeScoreValidationRules, createResumeScore);
 
 
-resumeScoreRouter.get('/:applicationId', getResumeScoreByApplication);
+resumeScoreRouter.get('/:applicationId', authenticateAny, getResumeScoreByApplication);
 
 export default resumeScoreRouter;

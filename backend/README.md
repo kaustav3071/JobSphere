@@ -265,6 +265,9 @@ All **User**, **Recruiter**, and **Job** routes have been thoroughly tested usin
 ✅ **Recruiter Routes testing Done**
 ✅ **Job Routes testing Done**
 ✅ **Application Routes testing Done**
+✅ **Resume Score Routes testing Done**
+✅ **create chat.get all chats done**
+❌**get chat id error**
 
 
 ---

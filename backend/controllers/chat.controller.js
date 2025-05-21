@@ -15,6 +15,20 @@ export const createChat = async (req, res) => {
   const requester = req.user || req.recruiter;
   const requesterModel = req.user ? 'User' : 'Recruiter';
 
+    // Ensure all participants have valid user IDs
+  if (
+    !Array.isArray(participants) ||
+    participants.length !== 2 ||
+    participants.some(
+      p =>
+        !p.user ||
+        !mongoose.Types.ObjectId.isValid(p.user) ||
+        !['User', 'Recruiter'].includes(p.model)
+    )
+  ) {
+    return res.status(400).json({ message: 'Participants must be two valid objects with user (ObjectId) and model (User/Recruiter)' });
+  }
+
   try {
     const isParticipant = participants.some(
       p => p.model === requesterModel && p.user.toString() === requester._id.toString()
@@ -23,12 +37,11 @@ export const createChat = async (req, res) => {
       return res.status(403).json({ message: 'You must be one of the participants to create a chat' });
     }
 
+    // Check for existing chat between these two participants (regardless of order)
     const existingChat = await Chat.findOne({
       $and: [
-        { 'participants.user': participants[0].user },
-        { 'participants.model': participants[0].model },
-        { 'participants.user': participants[1].user },
-        { 'participants.model': participants[1].model },
+        { 'participants.user': { $all: [participants[0].user, participants[1].user] } },
+        { 'participants.model': { $all: [participants[0].model, participants[1].model] } },
       ],
     });
 
@@ -95,8 +108,16 @@ export const getChatById = async (req, res) => {
     }
 
     const isParticipant = chat.participants.some(
-      p => p.model === requesterModel && p.user.toString() === requester._id.toString()
+      p =>
+        p.model === requesterModel &&
+        p.user &&
+        requester &&
+        p.user.toString() === requester._id.toString()
     );
+
+    console.log('requesterModel:', requesterModel);
+    console.log('requester._id:', requester?._id?.toString());
+    console.log('chat.participants:', chat.participants);
     if (!isParticipant) {
       return res.status(403).json({ message: 'Unauthorized to access this chat' });
     }
