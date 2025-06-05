@@ -85,7 +85,7 @@ recruiterSchema.pre("save", async function (next) {
 recruiterSchema.methods.generateAuthToken= function () {
   const secret = process.env.JWT_SECRET || "default_secret_key";
   const expiresIn = process.env.JWT_EXPIRES_IN || "1h";
-  return jwt.sign({ _id: this._id }, secret, {
+  return jwt.sign({ _id: this._id, model: 'Recruiter' }, secret, {
     expiresIn,
   });
 };

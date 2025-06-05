@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { config } from "dotenv";
@@ -94,7 +94,7 @@ userSchema.pre("save", async function (next) {
 
 userSchema.methods.generateAuthToken = function () {
   const secret = process.env.JWT_SECRET;
-  const token = jwt.sign({ _id: this._id }, secret, {
+  const token = jwt.sign({ _id: this._id, model: 'User' }, secret, {
     expiresIn: "1h",
   });
   return token;

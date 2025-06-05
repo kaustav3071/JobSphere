@@ -140,16 +140,31 @@ export const sendMessage = async (req, res) => {
   const sender = req.user || req.recruiter;
   const senderModel = req.user ? 'User' : 'Recruiter';
 
+  console.log('req.user:', req.user ? { _id: req.user._id, email: req.user.email } : null);
+  console.log('req.recruiter:', req.recruiter ? { _id: req.recruiter._id, email: req.recruiter.email } : null);
+  console.log('sender:', sender ? { _id: sender._id, email: sender.email } : null);
+  console.log('senderModel:', senderModel);
+  console.log('chatId:', chatId);
+  console.log('content:', content);
+
+  if (!sender || !sender._id) {
+    console.log('No valid sender found');
+    return res.status(401).json({ message: 'Unauthorized: No valid sender found' });
+  }
+
   try {
     const chat = await Chat.findById(chatId);
     if (!chat) {
+      console.log('Chat not found:', chatId);
       return res.status(404).json({ message: 'Chat not found' });
     }
 
+    console.log('Chat participants:', chat.participants.map(p => ({ user: p.user.toString(), model: p.model })));
     const isParticipant = chat.participants.some(
       p => p.model === senderModel && p.user.toString() === sender._id.toString()
     );
     if (!isParticipant) {
+      console.log('Unauthorized: Sender not a participant', { senderId: sender._id, senderModel, participants: chat.participants });
       return res.status(403).json({ message: 'Unauthorized to send a message in this chat' });
     }
 
@@ -159,26 +174,28 @@ export const sendMessage = async (req, res) => {
       content,
       sentAt: new Date(),
     };
+    console.log('Created message:', message);
 
     chat.messages.push(message);
     chat.updatedAt = new Date();
     await chat.save();
 
-    await chat.populate([
-      { path: 'messages.sender', match: { model: 'User' }, select: 'name email', model: 'User' },
-      { path: 'messages.sender', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
-    ]);
+    const populateQuery = senderModel === 'User'
+      ? { path: 'messages.sender', select: 'name email', model: 'User' }
+      : { path: 'messages.sender', select: 'name email companyName', model: 'Recruiter' };
 
-    //Emit the message using Socket.IO
+    await chat.populate([populateQuery]);
+
     const io = req.app.locals.io;
     io.to(chatId).emit('receiveMessage', {
       chatId,
       message: chat.messages[chat.messages.length - 1],
     });
+    console.log(`Emitted message to chat ${chatId}:`, chat.messages[chat.messages.length - 1]);
 
     res.status(200).json({ message: 'Message sent successfully', chat });
   } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ message: 'Failed to send message', error: error.message });
+    console.error('Error sending message:', error.message);
+    res.status(500).json({ message: 'Failed to send message from chat', error: error.message });
   }
 };

@@ -107,11 +107,6 @@ export const registerUser = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  console.log ('Login request body:', req.body);
-  console.log ('Login request user:', req.user);
-  console.log ('Login request cookies:', req.cookies);
-  console.log ('Login request headers:', req.headers);
-  
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
