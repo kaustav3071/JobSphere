@@ -3,13 +3,13 @@ import express, { json, urlencoded } from 'express';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
+import cookieParser from 'cookie-parser'; // Add cookie-parser
 
 import userRouter from './routes/user.routes.js';
 import jobRouter from './routes/job.routes.js';
 import recruiterRouter from './routes/recruiter.routes.js';
 import applicationRouter from './routes/application.routes.js';
 import chatRouter from './routes/chat.routes.js';
-// import { connectDB } from './db/db.js'
 import resumeScoreRouter from './routes/resume.routes.js';
 
 config();
@@ -47,9 +47,10 @@ app.locals.io = io;
 app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
+app.use(cookieParser()); // Add cookie-parser middleware
+app.use('/uploads/resumes', express.static('uploads/resumes'));
 
-// connectDB();
-
+// ROUTES
 app.use('/users', userRouter);
 app.use('/jobs', jobRouter);
 app.use('/recruiters', recruiterRouter);

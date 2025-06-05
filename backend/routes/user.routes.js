@@ -5,42 +5,28 @@ import {
   forgotPassword,
   resetPassword,
   getUserProfile,
+  updateResume
 } from "../controllers/user.controller.js";
 import { verifyEmail } from "../controllers/email.controller.js";
 import { authenticateUser } from "../middlewares/auth.js";
-import { body, param } from "express-validator";
+import { body } from "express-validator";
 import express from "express";
-import multer from "multer";
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: "uploads/resumes/",
-  filename: (req, file, cb) => {
-    cb(null, `resume-${Date.now()}-${file.originalname}`);
-  },
-});
-const upload = multer({ storage });
+import { upload } from "../controllers/user.controller.js"; // Import from user.controller.js
 
 const userRouter = express.Router();
 
-
 userRouter.post(
   "/register",
-  upload.single("resume"), 
+  upload,
   body("name").notEmpty().withMessage("Name is required"),
   body("email").isEmail().withMessage("Invalid email format"),
   body("password")
-    .isLength({ min: 8 }) 
+    .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
   body("phone").notEmpty().withMessage("Phone number is required"),
   body("address").notEmpty().withMessage("Address is required"),
-  body("resume").custom((value, { req }) => {
-    if (!req.file) throw new Error("Resume file is required");
-    return true;
-  }),
   registerUser
 );
-
 
 userRouter.post(
   "/login",
@@ -72,5 +58,20 @@ userRouter.post(
 userRouter.get("/profile", authenticateUser, getUserProfile);
 
 userRouter.get("/verify-email/:token", verifyEmail);
+
+userRouter.put(
+  "/update-resume",
+  authenticateUser,
+  (req, res, next) => {
+    upload(req, res, function (err) {
+      if (err) {
+        // Multer error
+        return res.status(400).json({ message: err.message });
+      }
+      next();
+    });
+  },
+  updateResume
+);
 
 export default userRouter;

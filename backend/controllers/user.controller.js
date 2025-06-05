@@ -7,101 +7,111 @@ import BlacklistToken from '../models/blacklistToken.model.js';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import url from 'url';
 
 dotenv.config();
 
 const storage = multer.diskStorage({
-    destination: 'uploads/resumes/',
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + '.pdf');
-    }
+  destination: 'uploads/resumes/',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + '.pdf');
+  }
 });
 
-const upload = multer({
-    storage: storage,
+export const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'), false);
+  },
+  limits: { fileSize: 1024 * 1024 * 5 }
 }).single('resume');
 
-
 export const registerUser = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Resume file is required' });
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() });
     }
-    const { name, email, password, phone, address} = req.body;
-    const resume = req.file ? `${req.protocol}://${req.get('host')}/uploads/resumes/${req.file.filename}`: null;
 
-    try {
+    const { name, email, password, phone, address } = req.body;
+    const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/resumes/${req.file.filename}`;
 
-        // Check if user already exists
-        const existingUser = await UserModel.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'A user with this email already exists' });
-        }
-
-        const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-
-        // Create a new user
-        const newUser = new UserModel({
-            name,
-            email,
-            password,
-            phone,
-            address,
-            resume: resume || '',
-            role:'job_seeker',
-            isVerified: false,
-            emailVerificationToken,
-        });
-
-        // Save the user to the database
-        await newUser.save();
-
-        const verificationUrl = `http://localhost:5000/user/verify-email/${emailVerificationToken}`;
-
-        const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-        });
-
-        const mailOptions = {
-        from: `"JobConnect" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: 'Verify your email',
-        html: `
-            <h3>Email Verification</h3>
-            <p>Hello ${name},</p>
-            <p>Please click the following link to verify your email:</p>
-            <a href="${verificationUrl}">${verificationUrl}</a>
-        `,
-        };
-
-        await transporter.sendMail(mailOptions);
-        // Generate a token
-        const token = newUser.generateAuthToken();
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Set to true in production
-            maxAge: 3600000, // 1 hour
-        });
-
-        // Send the token in the response
-        res.status(201).json({
-            message: 'User registered successfully and verification email sent',
-            token,
-        });
+    const existingUser = await UserModel.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'A user with this email already exists' });
     }
-    catch (error) {
-        console.error('Error registering user:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-}
+
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
+    const newUser = new UserModel({
+      name,
+      email,
+      password,
+      phone,
+      address,
+      resume: resumeUrl,
+      role: 'job_seeker',
+      isVerified: false,
+      emailVerificationToken,
+    });
+
+    await newUser.save();
+
+    const verificationUrl = `http://localhost:5000/users/verify-email/${emailVerificationToken}`;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"JobConnect" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Verify your email',
+      html: `
+        <h3>Email Verification</h3>
+        <p>Hello ${name},</p>
+        <p>Please click the following link to verify your email:</p>
+        <a href="${verificationUrl}">${verificationUrl}</a>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    const token = newUser.generateAuthToken();
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 3600000,
+    });
+
+    res.status(201).json({
+      message: 'User registered successfully and verification email sent',
+      token,
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 export const loginUser = async (req, res) => {
+  console.log ('Login request body:', req.body);
+  console.log ('Login request user:', req.user);
+  console.log ('Login request cookies:', req.cookies);
+  console.log ('Login request headers:', req.headers);
+  
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -273,3 +283,49 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 }
+
+export const updateResume = async (req, res) => {
+  console.log('Received file:', req.file);
+  console.log('Request user:', req.user);
+  console.log('Request body:', req.body);
+  try {
+    console.log('Updating resume for user:', req.user._id);
+    // Check if the user is authenticated
+    if (!req.user) {
+      console.log('User not authenticated');
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    if (!req.file) {
+      console.log('No file uploaded');
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const user = await UserModel.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Delete the old resume file if it exists
+    if (user.resume) {
+      const oldResumeUrl = user.resume;
+      const oldResumePath = path.join(
+        'uploads/resumes',
+        path.basename(url.parse(oldResumeUrl).pathname)
+      );
+      if (fs.existsSync(oldResumePath)) {
+        console.log(`Deleting old resume file: ${oldResumePath}`);
+        fs.unlinkSync(oldResumePath);
+      } else {
+        console.log(`Old resume file not found: ${oldResumePath}`);
+      }
+    }
+
+    // Update resume URL
+    const resumeUrl = `${req.protocol}://${req.get('host')}/uploads/resumes/${req.file.filename}`;
+    user.resume = resumeUrl;
+    await user.save();
+
+    res.status(200).json({ message: 'Resume updated successfully', resume: resumeUrl });
+  } catch (error) {
+    console.error('Error updating resume:', error);
+    res.status(500).json({ message: 'Failed to update resume', error: error.message });
+  }
+};

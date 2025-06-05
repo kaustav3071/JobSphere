@@ -18,7 +18,7 @@ const resumeScoreValidationRules = [
 ];
 
 
-resumeScoreRouter.post('/', authenticateRecruiter, resumeScoreValidationRules, createResumeScore);
+resumeScoreRouter.post('/', authenticateAny, resumeScoreValidationRules, createResumeScore);
 
 
 resumeScoreRouter.get('/:applicationId', authenticateAny, getResumeScoreByApplication);
