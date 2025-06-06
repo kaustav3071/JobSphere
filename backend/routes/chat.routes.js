@@ -5,7 +5,7 @@ import {
   sendMessage,
 } from '../controllers/chat.controller.js';
 
-import { authenticateAny } from '../middlewares/auth.js';
+import { authenticateAny, authenticateRecruiter } from '../middlewares/auth.js';
 import { body } from 'express-validator';
 import express from 'express';
 
@@ -34,8 +34,8 @@ const messageValidationRules = [
 ];
 
 chatRouter.post('/', authenticateAny, chatValidationRules, createChat);
-chatRouter.get('/', authenticateAny, getChats);
-chatRouter.get('/:chatId', authenticateAny, getChatById);
+chatRouter.get('/', authenticateRecruiter, getChats);
+chatRouter.get('/:chatId', authenticateRecruiter, getChatById);
 chatRouter.post('/:chatId/message', authenticateAny, messageValidationRules, sendMessage);
 
 export default chatRouter;
