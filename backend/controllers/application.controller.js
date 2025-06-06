@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { validationResult } from 'express-validator';
 import UserModel from '../models/user.model.js';
 import JobModel from '../models/job.model.js';
+import ResumeModel from '../models/resumeScore.model.js';
 
 dotenv.config();
 
@@ -115,8 +116,36 @@ export const updateApplicationStatus = async (req, res) => {
     }
 
     const job = await JobModel.findById(application.job);
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
     if (job.recruiterId.toString() !== req.recruiter._id.toString()) {
       return res.status(403).json({ message: 'Unauthorized to update this application' });
+    }
+
+    if (job.status !== 'active') {
+      return res.status(400).json({ message: 'Cannot update application for a job that is not active' });
+    }
+
+    if (status === 'hired' && application.status !== 'hired'){
+      if (job.vacancies <= 0) {
+        return res.status(400).json({ message: 'No vacancies available for this job' });
+      }
+
+      await JobModel.findByIdAndUpdate(
+        job._id,
+        { $inc: { vacancies: -1 } },
+        { new: true, runValidators: true }
+      );
+    }
+
+    if (job.vacancies <= 0) {
+      await JobModel.findByIdAndUpdate(
+        job._id,
+        { status: 'closed' },
+        { new: true, runValidators: true }
+      );
     }
 
     const updatedApplication = await ApplicationModel.findByIdAndUpdate(

@@ -2,12 +2,12 @@ import { io } from "socket.io-client";
 import readline from "readline";
 import axios from "axios";
 
-const recruiterToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODQxOWJiMTFhMWZkM2QwY2JmZjQ5NWMiLCJtb2RlbCI6IlJlY3J1aXRlciIsImlhdCI6MTc0OTE1MTU3NCwiZXhwIjoxNzQ5MTU1MTc0fQ.9Re_1joAyL1p3PunCGoR5i_RNQptoY6PSqR12oBxM2M";
+const recruiterToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODQyN2I0MzM5YTBiYjc4NGFmNmFhMTIiLCJtb2RlbCI6IlJlY3J1aXRlciIsImlhdCI6MTc0OTE4ODQ1MywiZXhwIjoxNzQ5MTkyMDUzfQ.0XTki6OPrYQABo0IzoEJ8lSuO0kjGpB0cHs1Uy-247E";
 const socket = io("http://localhost:5000", {
   auth: { token: recruiterToken },
   transports: ["websocket"],
 });
-const chatId = "6841f0a636b9c5d4cf19b688";
+const chatId = "68427f2139a0bb784af6aa41";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -59,6 +59,7 @@ rl.on("line", async (line) => {
       { content: line.trim() },
       { headers: { Authorization: `Bearer ${recruiterToken}` } }
     );
+    socket.emit('sendMessageToRoom', { chatId, message: response.data.newMessage });
     console.log("Message sent:", response.data.message);
   } catch (error) {
     console.error("Failed to send message from recruiter:", (error.response?.data?.message || error.message));

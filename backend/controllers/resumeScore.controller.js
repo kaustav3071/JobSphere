@@ -171,12 +171,19 @@ export const createResumeScore = async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    if (!req.recruiter || !req.recruiter._id) {
-      return res.status(403).json({ message: 'Unauthorized: Recruiter authentication required' });
-    }
+     // Allow if recruiter of job OR user who owns the application
+    const isRecruiter =
+      req.recruiter &&
+      req.recruiter._id &&
+      application.job.recruiterId.toString() === req.recruiter._id.toString();
 
-    if (application.job.recruiterId.toString() !== req.recruiter._id.toString()) {
-      return res.status(403).json({ message: 'Unauthorized to generate a score for this application' });
+    const isUser =
+      req.user &&
+      req.user._id &&
+      application.user._id.toString() === req.user._id.toString();
+
+    if (!isRecruiter && !isUser) {
+      return res.status(403).json({ message: 'Unauthorized: Only the recruiter or the applicant can generate a score for this application' });
     }
 
     // Check for Undo score and delete it to allow re-scoring

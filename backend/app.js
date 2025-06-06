@@ -69,6 +69,11 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('sendMessageToRoom', ({ chatId, message }) => {
+    // This will send to all except the sender
+    socket.to(chatId).emit('receiveMessage', { chatId, message });
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     socket.rooms.forEach(room => {

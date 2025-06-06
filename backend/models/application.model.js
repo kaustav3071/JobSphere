@@ -35,7 +35,7 @@ applicationSchema.index({ job: 1, user: 1 }, { unique: true });
 applicationSchema.virtual("resumeScore", {
   ref: "ResumeScore",
   localField: "_id",
-  foreignField: "applicationId",
+  foreignField: "application",
   justOne: true,
 });
 

@@ -187,13 +187,18 @@ export const sendMessage = async (req, res) => {
     await chat.populate([populateQuery]);
 
     const io = req.app.locals.io;
-    io.to(chatId).emit('receiveMessage', {
-      chatId,
-      message: chat.messages[chat.messages.length - 1],
-    });
-    console.log(`Emitted message to chat ${chatId}:`, chat.messages[chat.messages.length - 1]);
+    // Only emit to other participants, not the sender
+    // io.to(chatId).except(req.user ? req.user._id.toString() : req.recruiter._id.toString()).emit('receiveMessage', {
+    //   chatId,
+    //   message: chat.messages[chat.messages.length - 1],
+    // });
+    // console.log(`Emitted message to chat ${chatId}:`, chat.messages[chat.messages.length - 1]);
 
-    res.status(200).json({ message: 'Message sent successfully', chat });
+    res.status(200).json({ 
+      message: 'Message sent successfully', 
+      chat,
+      newMessage: chat.messages[chat.messages.length - 1],
+    });
   } catch (error) {
     console.error('Error sending message:', error.message);
     res.status(500).json({ message: 'Failed to send message from chat', error: error.message });
