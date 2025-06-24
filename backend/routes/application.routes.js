@@ -4,13 +4,13 @@ import {
     getApplicationById,
     updateApplicationStatus,
     deleteApplication,
+    getUserApplications,
 } from '../controllers/application.controller.js';
 import { authenticateUser, authenticateRecruiter, authenticateAny } from '../middlewares/auth.js';
 import { body } from 'express-validator';
 import express from 'express';
 
 const applicationRouter = express.Router();
-
 
 const applicationValidationRules = [
   body('job').notEmpty().withMessage('Job ID is required').isMongoId().withMessage('Invalid Job ID'),
@@ -24,6 +24,8 @@ const statusValidationRules = [
 
 applicationRouter.post('/', authenticateUser, applicationValidationRules, createApplication);
 
+// Add this route for users to fetch their own applications
+applicationRouter.get('/my', authenticateUser, getUserApplications);
 
 applicationRouter.get('/', authenticateRecruiter, getAllApplications);
 

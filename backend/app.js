@@ -23,6 +23,7 @@ const io = new Server(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
@@ -84,8 +85,13 @@ io.on('connection', (socket) => {
 
 app.locals.io = io;
 
-// MIDDLEWARES
-app.use(cors());
+// Configure CORS for Express
+app.use(cors({
+  origin: 'http://localhost:5173',
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Type'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+}));
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());

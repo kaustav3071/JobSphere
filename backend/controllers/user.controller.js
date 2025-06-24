@@ -107,176 +107,177 @@ export const registerUser = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  const { email, password } = req.body;
+
+  try {
+    // Check if user exists
+    const user = await UserModel.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
-    const { email, password } = req.body;
 
-    try {
-        // Check if user exists
-        const user = await UserModel.findOne({ email }).select('+password');
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        // Check if password is correct
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        if (!user.isVerified) {
-            return res.status(400).json({ message: 'Please verify your email before logging in' });
-        }
-
-        // Generate a token
-        const token = user.generateAuthToken();
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Set to true in production
-            maxAge: 3600000, // 1 hour
-        });
-
-        // Send the token in the response
-        res.status(200).json({
-            message: 'User logged in successfully',
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                address: user.address,
-                role: user.role,
-            },
-        });
+    // Check if password is correct
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
-    catch (error) {
-        console.error('Error logging in user:', error);
-        res.status(500).json({ message: 'Server error' });
+
+    if (!user.isVerified) {
+      return res.status(400).json({ message: 'Please verify your email before logging in' });
     }
+
+    // Generate a token
+    const token = user.generateAuthToken();
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Set to true in production
+      maxAge: 3600000, // 1 hour
+    });
+
+    // Send the token in the response
+    res.status(200).json({
+      message: 'User logged in successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        role: user.role,
+      },
+    });
+  }
+  catch (error) {
+    console.error('Error logging in user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 }
 
 export const logoutUser = async (req, res) => {
-    try {
-        // Try to get token from Authorization header or cookie
-        let token = req.headers.authorization?.split(' ')[1];
-        if (!token && req.cookies?.token) {
-            token = req.cookies.token;
-        }
-        if (!token) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-
-        // req.user may not be set if using only cookies, so decode token if needed
-        let userId = req.user?._id;
-        if (!userId) {
-            const jwt = (await import('jsonwebtoken')).default;
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            userId = decoded.id;
-        }
-
-        const blacklistedToken = new BlacklistToken({ token, userId,
-            userType: 'User', // Assuming the user type is 'User'
-         });
-        await blacklistedToken.save();
-
-        res.clearCookie('token');
-
-        res.status(200).json({ message: 'User logged out successfully' });
-    } catch (error) {
-        console.error('Error logging out user:', error);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    // Try to get token from Authorization header or cookie
+    let token = req.headers.authorization?.split(' ')[1];
+    if (!token && req.cookies?.token) {
+      token = req.cookies.token;
     }
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // req.user may not be set if using only cookies, so decode token if needed
+    let userId = req.user?._id;
+    if (!userId) {
+      const jwt = (await import('jsonwebtoken')).default;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id;
+    }
+
+    const blacklistedToken = new BlacklistToken({
+      token, userId,
+      userType: 'User', // Assuming the user type is 'User'
+    });
+    await blacklistedToken.save();
+
+    res.clearCookie('token');
+
+    res.status(200).json({ message: 'User logged out successfully' });
+  } catch (error) {
+    console.error('Error logging out user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 export const getUserProfile = async (req, res) => {
-    try {
-        const user = await UserModel.findById(req.user._id).select('-password');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        res.status(200).json(user);
+  try {
+    const user = await UserModel.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    catch (error) {
-        console.error('Error fetching user profile:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    res.status(200).json(user);
+  }
+  catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 }
 
 export const forgotPassword = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
-    const { email } = req.body;
-    try {
-        const user = await UserModel.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        // Generate a reset token
-        const resetToken = user.getResetPasswordToken();
-        await user.save({ validateBeforeSave: false });
-        
-        // Create a reset URL
-        const resetUrl = `${req.protocol}://${req.get('host')}/users/resetpassword/${resetToken}`;
-        const message = `You are receiving this email because you (or someone else) have requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
-        // Send email
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Password Reset Request',
-            text: message,
-        };
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ message: 'Email sent successfully' });
+  const { email } = req.body;
+  try {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    catch (error) {
-        console.error('Error sending reset password email:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Generate a reset token
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Create a reset URL
+    const resetUrl = `${req.protocol}://${req.get('host')}/users/resetpassword/${resetToken}`;
+    const message = `You are receiving this email because you (or someone else) have requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+    // Send email
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Password Reset Request',
+      text: message,
+    };
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Email sent successfully' });
+  }
+  catch (error) {
+    console.error('Error sending reset password email:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 }
 
 export const resetPassword = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
-    const { password } = req.body;
-    const resetToken = req.params.token;
+  const { password } = req.body;
+  const resetToken = req.params.token;
 
-    try {
-        // Hash the token
-        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const user = await UserModel.findOne({
-            resetPasswordToken: hashedToken,
-            resetPasswordExpire: { $gt: Date.now() },
-        });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired token' });
-        }
-        // Update password
-        user.password = password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
-        await user.save();
-        res.status(200).json({ message: 'Password reset successfully' });
+  try {
+    // Hash the token
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
     }
-    catch (error) {
-        console.error('Error resetting password:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Update password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    res.status(200).json({ message: 'Password reset successfully' });
+  }
+  catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 }
 
 export const updateResume = async (req, res) => {

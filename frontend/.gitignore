@@ -1,0 +1,14 @@
+node_modules
+uploads
+dist
+coverage
+.env
+*.log
+*.tsbuildinfo
+*.tgz
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.tar.xz
+*.tar.bz2

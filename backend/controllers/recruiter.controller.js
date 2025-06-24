@@ -49,10 +49,10 @@ export const registerRecruiter = async (req, res) => {
         });
 
         const mailOptions = {
-        from: `"JobConnect" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: 'Verify your email',
-        html: `
+            from: `"JobConnect" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Verify your email',
+            html: `
             <h3>Email Verification</h3>
             <p>Hello ${name},</p>
             <p>Please click the following link to verify your email:</p>
@@ -84,10 +84,11 @@ export const loginRecruiter = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
     const { email, password } = req.body;
+    const normalizedEmail = email.toLowerCase();
 
     try {
         // Check if recruiter exists
-        const recruiter = await RecruiterModel.findOne({ email }).select('+password');
+        const recruiter = await RecruiterModel.findOne({ email: normalizedEmail }).select('+password');
         if (!recruiter) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -111,7 +112,8 @@ export const loginRecruiter = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         });
 
-        res.status(200).json({ message: 'Recruiter logged in successfully', token,
+        res.status(200).json({
+            message: 'Recruiter logged in successfully', token,
             recruiter: {
                 id: recruiter._id,
                 name: recruiter.name,
@@ -121,7 +123,7 @@ export const loginRecruiter = async (req, res) => {
                 address: recruiter.address,
                 role: recruiter.role,
             },
-         });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
@@ -129,7 +131,7 @@ export const loginRecruiter = async (req, res) => {
 }
 
 export const logoutRecruiter = async (req, res) => {
-    try{
+    try {
         let token = req.headers.authorization?.split(' ')[1];
         if (!token && req.cookies?.token) {
             token = req.cookies.token;
@@ -137,13 +139,13 @@ export const logoutRecruiter = async (req, res) => {
         if (!token) {
             return res.status(401).json({ message: 'No token provided' });
         }
-        
 
-        const blacklistedToken = new BlacklistToken({ 
+
+        const blacklistedToken = new BlacklistToken({
             token,
             userId: req.recruiter._id,
             userType: "Recruiter", // Specify the model type
-         });
+        });
         await blacklistedToken.save();
 
         res.clearCookie('token');
@@ -152,7 +154,7 @@ export const logoutRecruiter = async (req, res) => {
     catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
-    }  
+    }
 }
 
 export const getRecruiterProfile = async (req, res) => {
@@ -257,4 +259,3 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 }
-        

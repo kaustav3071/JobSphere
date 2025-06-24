@@ -163,7 +163,6 @@ const calculateResumeScore = async (resume, job) => {
 export const createResumeScore = async (req, res) => {
   try {
     const { applicationId } = req.body;
-
     const application = await ApplicationModel.findById(applicationId)
       .populate('job')
       .populate('user');
@@ -171,7 +170,7 @@ export const createResumeScore = async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-     // Allow if recruiter of job OR user who owns the application
+    // Allow if recruiter of job OR user who owns the application
     const isRecruiter =
       req.recruiter &&
       req.recruiter._id &&

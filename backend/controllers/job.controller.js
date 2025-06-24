@@ -43,14 +43,16 @@ export const createJob = async (req, res) => {
 
 export const getAllJobs = async (req, res) => {
   try {
-    const { status = 'active', location, jobType, role, page = 1, limit = 10 } = req.query;
+    const { status = 'active', location, jobType, role, recruiterId, page = 1, limit = 10 } = req.query;
     const query = {};
 
+    
     if (status) query.status = status;
     if (location) query.location = { $regex: location, $options: 'i' };
     if (jobType) query.jobType = jobType;
     if (role) query.role = role;
-
+    if (recruiterId) query._id = recruiterId;
+    
     const jobs = await JobModel.find(query)
       .populate('recruiterId', 'name email')
       .skip((page - 1) * limit)

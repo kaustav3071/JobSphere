@@ -37,6 +37,7 @@ export const createApplication = async (req, res) => {
 
 export const getAllApplications = async (req, res) => {
   try {
+    console.log(req.query)
     const { jobId, status, page = 1, limit = 10 } = req.query;
     const query = {};
 
@@ -186,5 +187,32 @@ export const deleteApplication = async (req, res) => {
   } catch (error) {
     console.error('Error deleting application:', error);
     res.status(500).json({ message: 'Failed to delete application', error: error.message });
+  }
+};
+
+export const getUserApplications = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const query = { user: req.user._id };
+
+    const applications = await ApplicationModel.find(query)
+      .populate('job', 'title description')
+      .populate('resumeScore')
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await ApplicationModel.countDocuments(query);
+
+    res.status(200).json({
+      message: 'User applications retrieved successfully',
+      applications,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error('Error retrieving user applications:', error);
+    res.status(500).json({ message: 'Failed to retrieve user applications', error: error.message });
   }
 };

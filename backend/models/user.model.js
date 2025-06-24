@@ -61,7 +61,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["job_seeker"],
+      enum: ["job_seeker", "recruiter"],
       default: "job_seeker",
       required: true,
     },
@@ -95,7 +95,7 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.generateAuthToken = function () {
   const secret = process.env.JWT_SECRET;
   const token = jwt.sign({ _id: this._id, model: 'User' }, secret, {
-    expiresIn: "1h",
+    expiresIn: "7d",
   });
   return token;
 };

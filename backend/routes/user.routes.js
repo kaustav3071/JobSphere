@@ -48,7 +48,7 @@ userRouter.post(
 
 userRouter.post(
   "/reset-password/:token",
-  body("password") // Align with controller
+  body("password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
   resetPassword
