@@ -3,6 +3,8 @@ import { useAuth } from "../hooks/useAuth";
 import StatsCard from "../components/dashboard/StatsCard";
 import RecentActivity from "../components/dashboard/RecentActivity";
 import { BarChart3 } from "lucide-react"; // Optional icon for header
+import { getMyApplications, getApplicationsByJobId } from "../services/applicationService";
+import { getMyJobs } from "../services/jobService";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -13,24 +15,41 @@ const Dashboard = () => {
     const fetchDashboard = async () => {
       try {
         if (user.role === "job_seeker") {
+          // Fetch all applications for the user
+          const { applications = [] } = await getMyApplications(1, 100);
           setStats({
-            Applications: 4,
-            Shortlisted: 2,
-            Interviews: 1,
+            Applications: applications.length,
+            Shortlisted: applications.filter(app => app.status === "shortlisted").length,
+            Interviews: applications.filter(app => app.status === "interviewed").length,
           });
-          setActivity([
-            "✅ Applied to Web Developer at ABC Corp",
-            "⭐ Shortlisted for Frontend Intern",
-          ]);
+          setActivity(
+            applications.slice(0, 5).map(app =>
+              `✅ Applied to ${app.job?.title || "a job"}`
+            )
+          );
         } else if (user.role === "recruiter") {
+          // Fetch all jobs posted by the recruiter
+          const { jobs = [] } = await getMyJobs(1, 100);
+          // Fetch all applications for all jobs posted by this recruiter
+          let totalApplicants = 0;
+          let interviewsScheduled = 0;
+          let recentActivities = [];
+          for (const job of jobs) {
+            const { applications = [] } = await getApplicationsByJobId(job._id, 1, 100);
+            totalApplicants += applications.length;
+            interviewsScheduled += applications.filter(app => app.status === "interviewed").length;
+            if (applications.length > 0) {
+              recentActivities.push(`📩 Received ${applications.length} application(s) for '${job.title}'`);
+            }
+          }
           setStats({
-            "Jobs Posted": 3,
-            "Total Applicants": 21,
-            "Interviews Scheduled": 5,
+            "Jobs Posted": jobs.length,
+            "Total Applicants": totalApplicants,
+            "Interviews Scheduled": interviewsScheduled,
           });
           setActivity([
-            "📢 Posted 'Backend Developer' role",
-            "📩 Received 7 new applications for 'UI Designer'",
+            ...jobs.slice(0, 2).map(job => `📢 Posted '${job.title}' role`),
+            ...recentActivities.slice(0, 3),
           ]);
         }
       } catch (err) {
