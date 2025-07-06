@@ -11,13 +11,31 @@ import { verifyEmail } from "../controllers/email.controller.js";
 import { authenticateUser } from "../middlewares/auth.js";
 import { body } from "express-validator";
 import express from "express";
+import multer from "multer";
 import { upload } from "../controllers/user.controller.js"; // Import from user.controller.js
 
 const userRouter = express.Router();
 
+// Multer error handling middleware
+const handleMulterError = (req, res, next) => {
+  upload(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      console.log('Multer error:', err);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+      }
+      return res.status(400).json({ message: 'File upload error: ' + err.message });
+    } else if (err) {
+      console.log('Other upload error:', err);
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+};
+
 userRouter.post(
   "/register",
-  upload,
+  handleMulterError,
   body("name").notEmpty().withMessage("Name is required"),
   body("email").isEmail().withMessage("Invalid email format"),
   body("password")

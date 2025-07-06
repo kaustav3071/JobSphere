@@ -32,12 +32,20 @@ export const upload = multer({
 
 export const registerUser = async (req, res) => {
   try {
+    console.log('Registration request received:', {
+      body: req.body,
+      file: req.file ? 'File uploaded' : 'No file',
+      headers: req.headers['content-type']
+    });
+
     if (!req.file) {
+      console.log('No resume file provided');
       return res.status(400).json({ message: 'Resume file is required' });
     }
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 

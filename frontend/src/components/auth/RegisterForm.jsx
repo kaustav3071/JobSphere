@@ -38,6 +38,13 @@ const RegisterForm = () => {
         setError("");
         setSuccess("");
         setLoading(true);
+        
+        console.log('Form submission started:', {
+            role: form.role,
+            apiUrl: import.meta.env.VITE_API_URL,
+            hasResume: !!resume
+        });
+        
         try {
             let response;
             if (form.role === "user") {
@@ -49,6 +56,8 @@ const RegisterForm = () => {
                 formData.append("phone", form.phone);
                 formData.append("address", form.address);
                 if (resume) formData.append("resume", resume);
+                
+                console.log('Sending user registration request...');
                 response = await fetch(`${import.meta.env.VITE_API_URL}/users/register`, {
                     method: "POST",
                     body: formData,
@@ -56,6 +65,7 @@ const RegisterForm = () => {
                 });
             } else {
                 // Recruiter: send JSON
+                console.log('Sending recruiter registration request...');
                 response = await fetch(`${import.meta.env.VITE_API_URL}/recruiters/register`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -70,8 +80,30 @@ const RegisterForm = () => {
                     credentials: "include",
                 });
             }
+            
+            console.log('Response received:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            
+            // Check if response is ok before parsing JSON
+            if (!response.ok) {
+                // Try to get error message, but handle cases where response might not be JSON
+                let errorMessage = "Registration failed";
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (jsonError) {
+                    // If JSON parsing fails, use status text or generic message
+                    errorMessage = response.statusText || `Server error: ${response.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+            
+            // Only parse JSON if response is ok
             const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "Registration failed");
             setSuccess(data.message || "Registration successful! Please check your email to verify your account.");
             setForm({
                 role: "user",
@@ -84,7 +116,15 @@ const RegisterForm = () => {
             });
             setResume(null);
         } catch (err) {
-            setError(err.message);
+            console.error("Registration error:", err);
+            // Handle different types of errors
+            if (err.name === 'TypeError' && err.message.includes('fetch')) {
+                setError("Unable to connect to server. Please check if the server is running.");
+            } else if (err.message.includes('JSON')) {
+                setError("Server returned an invalid response. Please try again.");
+            } else {
+                setError(err.message || "Registration failed. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
