@@ -1,8 +1,8 @@
 ![alt text](image.png)
 
-# JobConnect Backend
+# JobSphere Backend
 
-This is the backend service for the JobConnect platform, providing RESTful APIs for job seekers and recruiters to manage jobs, applications, chats, and resume scoring.
+This is the backend service for the JobSphere platform, providing RESTful APIs for job seekers and recruiters to manage jobs, applications, chats, and resume scoring.
 
 ## Table of Contents
 

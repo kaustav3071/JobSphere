@@ -76,7 +76,7 @@ export const registerUser = async (req, res) => {
     });
 
     const mailOptions = {
-      from: `"JobConnect" <${process.env.EMAIL_USER}>`,
+      from: `"JobSphere" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Verify your email',
       html: `
