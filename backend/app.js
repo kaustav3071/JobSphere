@@ -23,7 +23,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -119,7 +119,7 @@ app.locals.io = io;
 
 // Configure CORS for Express
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Type'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
