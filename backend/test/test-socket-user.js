@@ -2,12 +2,12 @@ import { io } from "socket.io-client";
 import readline from "readline";
 import axios from "axios";
 
-const userToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODQyN2FkNzM5YTBiYjc4NGFmNmFhMGIiLCJtb2RlbCI6IlVzZXIiLCJpYXQiOjE3NDkxODg0OTIsImV4cCI6MTc0OTE5MjA5Mn0.W76sCRQOkJqLdyBUEKZLBBaS3u6rJEpE_hKbqLTSg9c";
+const userToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODZhMzIxZTg4ZjY1NTE0ZDgxM2U5YmEiLCJtb2RlbCI6IlVzZXIiLCJpYXQiOjE3NTE3OTA0NDgsImV4cCI6MTc1MjM5NTI0OH0.rduLB1f6p1v88noXoGLGdEw4KAw1MZG1mwUNL2PynLU";
 const socket = io("http://localhost:5000", {
   auth: { token: userToken },
   transports: ["websocket"],
 });
-const chatId = "68427f2139a0bb784af6aa41";
+const chatId = "686a3456b8686390918dff35";
 
 const rl = readline.createInterface({
   input: process.stdin,

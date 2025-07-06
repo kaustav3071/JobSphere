@@ -2,12 +2,12 @@ import { io } from "socket.io-client";
 import readline from "readline";
 import axios from "axios";
 
-const recruiterToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODQyN2I0MzM5YTBiYjc4NGFmNmFhMTIiLCJtb2RlbCI6IlJlY3J1aXRlciIsImlhdCI6MTc0OTE4ODQ1MywiZXhwIjoxNzQ5MTkyMDUzfQ.0XTki6OPrYQABo0IzoEJ8lSuO0kjGpB0cHs1Uy-247E";
+const recruiterToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODZhMzI1ZDg4ZjY1NTE0ZDgxM2U5ZWEiLCJtb2RlbCI6IlJlY3J1aXRlciIsImlhdCI6MTc1MTc5MDUxMywiZXhwIjoxNzUxNzk0MTEzfQ.f_Nab2m6yaS5jxy1VDeaTugpI5egSvltbvPGw6RhYdI";
 const socket = io("http://localhost:5000", {
   auth: { token: recruiterToken },
   transports: ["websocket"],
 });
-const chatId = "68427f2139a0bb784af6aa41";
+const chatId = "686a3456b8686390918dff35";
 
 const rl = readline.createInterface({
   input: process.stdin,

@@ -46,18 +46,59 @@ export const createChat = async (req, res) => {
     });
 
     if (existingChat) {
-      return res.status(400).json({ message: 'A chat between these participants already exists', chat: existingChat });
+      // Populate the existing chat and return it
+      const populatedParticipants = await Promise.all(
+        existingChat.participants.map(async (participant) => {
+          let populatedUser;
+          if (participant.model === 'User') {
+            const User = mongoose.model('User');
+            populatedUser = await User.findById(participant.user).select('name email');
+          } else if (participant.model === 'Recruiter') {
+            const Recruiter = mongoose.model('Recruiter');
+            populatedUser = await Recruiter.findById(participant.user).select('name email companyName');
+          }
+          return {
+            ...participant.toObject(),
+            user: populatedUser
+          };
+        })
+      );
+
+      const populatedExistingChat = {
+        ...existingChat.toObject(),
+        participants: populatedParticipants
+      };
+
+      return res.status(200).json({ message: 'Chat already exists', chat: populatedExistingChat });
     }
 
     const newChat = new Chat({ participants });
     await newChat.save();
 
-    await newChat.populate([
-      { path: 'participants.user', match: { model: 'User' }, select: 'name email', model: 'User' },
-      { path: 'participants.user', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
-    ]);
+    // Populate the new chat
+    const populatedParticipants = await Promise.all(
+      newChat.participants.map(async (participant) => {
+        let populatedUser;
+        if (participant.model === 'User') {
+          const User = mongoose.model('User');
+          populatedUser = await User.findById(participant.user).select('name email');
+        } else if (participant.model === 'Recruiter') {
+          const Recruiter = mongoose.model('Recruiter');
+          populatedUser = await Recruiter.findById(participant.user).select('name email companyName');
+        }
+        return {
+          ...participant.toObject(),
+          user: populatedUser
+        };
+      })
+    );
 
-    res.status(201).json({ message: 'Chat created successfully', chat: newChat });
+    const populatedNewChat = {
+      ...newChat.toObject(),
+      participants: populatedParticipants
+    };
+
+    res.status(201).json({ message: 'Chat created successfully', chat: populatedNewChat });
   } catch (error) {
     console.error('Error creating chat:', error);
     res.status(500).json({ message: 'Failed to create chat', error: error.message });
@@ -74,13 +115,35 @@ export const getChats = async (req, res) => {
         $elemMatch: { user: requester._id, model: requesterModel },
       },
     })
-      .populate([
-        { path: 'participants.user', match: { model: 'User' }, select: 'name email', model: 'User' },
-        { path: 'participants.user', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
-      ])
       .sort({ updatedAt: -1 });
 
-    res.status(200).json({ message: 'Chats retrieved successfully', chats });
+    // Manually populate the participants based on their model
+    const populatedChats = await Promise.all(
+      chats.map(async (chat) => {
+        const populatedParticipants = await Promise.all(
+          chat.participants.map(async (participant) => {
+            let populatedUser;
+            if (participant.model === 'User') {
+              const User = mongoose.model('User');
+              populatedUser = await User.findById(participant.user).select('name email');
+            } else if (participant.model === 'Recruiter') {
+              const Recruiter = mongoose.model('Recruiter');
+              populatedUser = await Recruiter.findById(participant.user).select('name email companyName');
+            }
+            return {
+              ...participant.toObject(),
+              user: populatedUser
+            };
+          })
+        );
+        return {
+          ...chat.toObject(),
+          participants: populatedParticipants
+        };
+      })
+    );
+
+    res.status(200).json({ message: 'Chats retrieved successfully', chats: populatedChats });
   } catch (error) {
     console.error('Error retrieving chats:', error);
     res.status(500).json({ message: 'Failed to retrieve chats', error: error.message });
@@ -93,15 +156,7 @@ export const getChatById = async (req, res) => {
     const requester = req.user || req.recruiter;
     const requesterModel = req.user ? 'User' : 'Recruiter';
 
-    const chat = await Chat.findById(chatId)
-      .populate([
-        { path: 'participants.user', match: { model: 'User' }, select: 'name email', model: 'User' },
-        { path: 'participants.user', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
-      ])
-      .populate([
-        { path: 'messages.sender', match: { model: 'User' }, select: 'name email', model: 'User' },
-        { path: 'messages.sender', match: { model: 'Recruiter' }, select: 'name email companyName', model: 'Recruiter' },
-      ]);
+    const chat = await Chat.findById(chatId);
 
     if (!chat) {
       return res.status(404).json({ message: 'Chat not found' });
@@ -115,14 +170,52 @@ export const getChatById = async (req, res) => {
         p.user.toString() === requester._id.toString()
     );
 
-    console.log('requesterModel:', requesterModel);
-    console.log('requester._id:', requester?._id?.toString());
-    console.log('chat.participants:', chat.participants);
     if (!isParticipant) {
       return res.status(403).json({ message: 'Unauthorized to access this chat' });
     }
 
-    res.status(200).json({ message: 'Chat retrieved successfully', chat });
+    // Manually populate participants and messages
+    const populatedParticipants = await Promise.all(
+      chat.participants.map(async (participant) => {
+        let populatedUser;
+        if (participant.model === 'User') {
+          const User = mongoose.model('User');
+          populatedUser = await User.findById(participant.user).select('name email');
+        } else if (participant.model === 'Recruiter') {
+          const Recruiter = mongoose.model('Recruiter');
+          populatedUser = await Recruiter.findById(participant.user).select('name email companyName');
+        }
+        return {
+          ...participant.toObject(),
+          user: populatedUser
+        };
+      })
+    );
+
+    const populatedMessages = await Promise.all(
+      chat.messages.map(async (message) => {
+        let populatedSender;
+        if (message.senderModel === 'User') {
+          const User = mongoose.model('User');
+          populatedSender = await User.findById(message.sender).select('name email');
+        } else if (message.senderModel === 'Recruiter') {
+          const Recruiter = mongoose.model('Recruiter');
+          populatedSender = await Recruiter.findById(message.sender).select('name email companyName');
+        }
+        return {
+          ...message.toObject(),
+          sender: populatedSender
+        };
+      })
+    );
+
+    const populatedChat = {
+      ...chat.toObject(),
+      participants: populatedParticipants,
+      messages: populatedMessages
+    };
+
+    res.status(200).json({ message: 'Chat retrieved successfully', chat: populatedChat });
   } catch (error) {
     console.error('Error retrieving chat:', error);
     res.status(500).json({ message: 'Failed to retrieve chat', error: error.message });
@@ -187,12 +280,14 @@ export const sendMessage = async (req, res) => {
     await chat.populate([populateQuery]);
 
     const io = req.app.locals.io;
-    // Only emit to other participants, not the sender
-    // io.to(chatId).except(req.user ? req.user._id.toString() : req.recruiter._id.toString()).emit('receiveMessage', {
-    //   chatId,
-    //   message: chat.messages[chat.messages.length - 1],
-    // });
-    // console.log(`Emitted message to chat ${chatId}:`, chat.messages[chat.messages.length - 1]);
+    if (io) {
+      // Emit to all participants in the chat room except the sender
+      io.to(chatId).except(sender._id.toString()).emit('receiveMessage', {
+        chatId,
+        message: chat.messages[chat.messages.length - 1],
+      });
+      console.log(`Emitted message to chat ${chatId}`);
+    }
 
     res.status(200).json({ 
       message: 'Message sent successfully', 

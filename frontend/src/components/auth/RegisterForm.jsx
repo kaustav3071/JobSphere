@@ -11,20 +11,22 @@ const RegisterForm = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({
+        role: "user",
         name: "",
         email: "",
         password: "",
         phone: "",
         address: "",
-        role: "user",
-        companyName: ""
+        companyName: "",
     });
     const [resume, setResume] = useState(null);
-    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleFileChange = (e) => {
@@ -33,31 +35,56 @@ const RegisterForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError("");
+        setSuccess("");
         setLoading(true);
-        setError(null);
         try {
-            const formData = new FormData();
-            Object.entries(form).forEach(([key, value]) => {
-                if (form.role === "user" && key === "companyName") return;
-                if (form.role === "recruiter" && key === "resume") return;
-                formData.append(key, value);
-            });
-            if (form.role === "user" && resume) {
-                formData.append("resume", resume);
+            let response;
+            if (form.role === "user") {
+                // Job Seeker: send FormData with resume
+                const formData = new FormData();
+                formData.append("name", form.name);
+                formData.append("email", form.email);
+                formData.append("password", form.password);
+                formData.append("phone", form.phone);
+                formData.append("address", form.address);
+                if (resume) formData.append("resume", resume);
+                response = await fetch("http://localhost:5000/users/register", {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                });
+            } else {
+                // Recruiter: send JSON
+                response = await fetch("http://localhost:5000/recruiters/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: form.name,
+                        email: form.email,
+                        password: form.password,
+                        phone: form.phone,
+                        address: form.address,
+                        companyName: form.companyName,
+                    }),
+                    credentials: "include",
+                });
             }
-            form.role === "recruiter"
-                ? await recruiterRegister(formData)
-                : await register(formData);
-
-            await login(
-                { email: form.email, password: form.password },
-                form.role
-            );
-            toast.success("Registration successful!");
-            navigate(form.role === "recruiter" ? "/recruiter/dashboard" : "/dashboard");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Registration failed");
+            setSuccess(data.message || "Registration successful! Please check your email to verify your account.");
+            setForm({
+                role: "user",
+                name: "",
+                email: "",
+                password: "",
+                phone: "",
+                address: "",
+                companyName: "",
+            });
+            setResume(null);
         } catch (err) {
-            setError(err.response?.data?.message || "Registration failed");
-            toast.error(err.response?.data?.message || "Registration failed");
+            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -75,6 +102,17 @@ const RegisterForm = () => {
                         <p className="text-red-800 text-sm font-medium leading-relaxed">{error}</p>
                     </div>
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-400/10 to-pink-400/10 animate-pulse"></div>
+                </div>
+            )}
+            {success && (
+                <div className="relative overflow-hidden">
+                    <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-2xl shadow-sm backdrop-blur-sm">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4 text-green-600" />
+                        </div>
+                        <p className="text-green-800 text-sm font-medium leading-relaxed">{success}</p>
+                    </div>
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400/10 to-emerald-400/10 animate-pulse"></div>
                 </div>
             )}
 

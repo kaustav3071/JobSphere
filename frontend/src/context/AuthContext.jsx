@@ -57,11 +57,18 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        // Clear authentication data
         localStorage.removeItem("token");
         localStorage.removeItem("userType");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("recruiterId");
+        localStorage.removeItem("user");
+        
         setUser(null);
         setUserType(null);
         setError(null);
+        
+        // Chat cleanup will be handled by the ChatContext when it detects no token
     };
 
     const fetchProfile = async () => {

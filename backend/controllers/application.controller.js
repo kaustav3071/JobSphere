@@ -57,7 +57,15 @@ export const getAllApplications = async (req, res) => {
     if (status) query.status = status;
 
     const applications = await ApplicationModel.find(query)
-      .populate('job', 'title description')
+      .populate({
+        path: 'job',
+        select: 'title description recruiterId',
+        populate: {
+          path: 'recruiterId',
+          model: 'Recruiter',
+          select: 'name email companyName'
+        }
+      })
       .populate('user', 'name email resume')
       .populate('resumeScore')
       .skip((page - 1) * limit)
@@ -84,7 +92,15 @@ export const getApplicationById = async (req, res) => {
     const { applicationId } = req.params;
 
     const application = await ApplicationModel.findById(applicationId)
-      .populate('job', 'title description')
+      .populate({
+        path: 'job',
+        select: 'title description recruiterId',
+        populate: {
+          path: 'recruiterId',
+          model: 'Recruiter',
+          select: 'name email companyName'
+        }
+      })
       .populate('user', 'name email resume')
       .populate('resumeScore');
     if (!application) {
@@ -196,7 +212,15 @@ export const getUserApplications = async (req, res) => {
     const query = { user: req.user._id };
 
     const applications = await ApplicationModel.find(query)
-      .populate('job', 'title description')
+      .populate({
+        path: 'job',
+        select: 'title description recruiterId',
+        populate: {
+          path: 'recruiterId',
+          model: 'Recruiter',
+          select: 'name email companyName'
+        }
+      })
       .populate('resumeScore')
       .skip((page - 1) * limit)
       .limit(parseInt(limit))

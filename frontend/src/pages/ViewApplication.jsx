@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getApplicationsByJobId, getMyApplications, updateApplicationStatus } from "../services/applicationService";
+import { createChat } from "../services/chatService";
 import Loading from "../components/common/Loading";
 import { useAuth } from "../hooks/useAuth";
 
@@ -66,6 +67,51 @@ const ViewApplications = () => {
     }
   };
 
+  const handleCreateChat = async (app) => {
+    // Try to get recruiter ID from the populated job object
+    const recruiterId = app.job?.recruiterId?._id || app.job?.recruiterId;
+    const userId = app.user?._id || app.user;
+
+    console.log("Creating chat with:", { 
+      app, 
+      recruiterId, 
+      userId,
+      job: app.job,
+      recruiterData: app.job?.recruiterId 
+    });
+
+    if (!userId || !recruiterId) {
+      console.error("Missing user or recruiter info for chat creation", { 
+        app, 
+        userId, 
+        recruiterId,
+        job: app.job 
+      });
+      toast.error("Cannot create chat: missing user or recruiter info. Please contact support or try again later.");
+      return;
+    }
+
+    try {
+      const participants = [
+        { user: userId, model: "User" },
+        { user: recruiterId, model: "Recruiter" },
+      ];
+      
+      console.log("Creating chat with participants:", participants);
+      
+      const res = await createChat(participants);
+      toast.success("Chat created successfully!");
+      
+      // Navigate to chat page
+      navigate('/chat');
+    } catch (err) {
+      console.error("Chat creation error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to create chat or chat already exists."
+      );
+    }
+  };
+
   if (authLoading || loading) return <Loading />;
 
   return (
@@ -123,7 +169,15 @@ const ViewApplications = () => {
                       <p><span className="font-medium text-gray-700">Email:</span> {app.user?.email}</p>
                     </div>
                   )}
+                  {/* Chat button for both recruiter and user */}
+                  <button
+                    className="mt-3 px-4 py-1 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-sm font-medium shadow"
+                    onClick={() => handleCreateChat(app)}
+                  >
+                    Create Chat
+                  </button>
                 </div>
+                
 
                 <div className="flex flex-col items-end gap-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize

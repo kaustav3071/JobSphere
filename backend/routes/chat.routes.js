@@ -34,8 +34,8 @@ const messageValidationRules = [
 ];
 
 chatRouter.post('/', authenticateAny, chatValidationRules, createChat);
-chatRouter.get('/', authenticateRecruiter, getChats);
-chatRouter.get('/:chatId', authenticateRecruiter, getChatById);
+chatRouter.get('/', authenticateAny, getChats);
+chatRouter.get('/:chatId', authenticateAny, getChatById);
 chatRouter.post('/:chatId/message', authenticateAny, messageValidationRules, sendMessage);
 
 export default chatRouter;
