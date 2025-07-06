@@ -40,7 +40,7 @@ const Navbar = () => {
               to="/"
               className="text-2xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text tracking-tight"
             >
-              JobConnect
+              JobSphere
             </Link>
           </div>
 
