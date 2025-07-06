@@ -65,7 +65,7 @@ export const registerUser = async (req, res) => {
 
     await newUser.save();
 
-    const verificationUrl = `http://localhost:5000/users/verify-email/${emailVerificationToken}`;
+    const verificationUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/users/verify-email/${emailVerificationToken}`;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',

@@ -39,7 +39,7 @@ export const registerRecruiter = async (req, res) => {
         // Save the recruiter to the database
         await newRecruiter.save();
 
-        const verificationUrl = `http://localhost:5000/recruiters/verify-email/${emailVerificationToken}`;
+        const verificationUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/recruiters/verify-email/${emailVerificationToken}`;
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {

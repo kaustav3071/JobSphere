@@ -3,7 +3,7 @@ import readline from "readline";
 import axios from "axios";
 
 const userToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODZhMzIxZTg4ZjY1NTE0ZDgxM2U5YmEiLCJtb2RlbCI6IlVzZXIiLCJpYXQiOjE3NTE3OTA0NDgsImV4cCI6MTc1MjM5NTI0OH0.rduLB1f6p1v88noXoGLGdEw4KAw1MZG1mwUNL2PynLU";
-const socket = io("http://localhost:5000", {
+const socket = io(process.env.BACKEND_URL || "http://localhost:5000", {
   auth: { token: userToken },
   transports: ["websocket"],
 });
@@ -55,7 +55,7 @@ socket.on('disconnect', () => {
 rl.on("line", async (line) => {
   try {
     const response = await axios.post(
-      `http://localhost:5000/chats/${chatId}/message`,
+      `${process.env.BACKEND_URL || "http://localhost:5000"}/chats/${chatId}/message`,
       { content: line.trim() },
       { headers: { Authorization: `Bearer ${userToken}` } }
     );

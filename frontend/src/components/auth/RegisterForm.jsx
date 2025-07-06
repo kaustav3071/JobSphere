@@ -49,14 +49,14 @@ const RegisterForm = () => {
                 formData.append("phone", form.phone);
                 formData.append("address", form.address);
                 if (resume) formData.append("resume", resume);
-                response = await fetch("http://localhost:5000/users/register", {
+                response = await fetch(`${import.meta.env.VITE_API_URL}/users/register`, {
                     method: "POST",
                     body: formData,
                     credentials: "include",
                 });
             } else {
                 // Recruiter: send JSON
-                response = await fetch("http://localhost:5000/recruiters/register", {
+                response = await fetch(`${import.meta.env.VITE_API_URL}/recruiters/register`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

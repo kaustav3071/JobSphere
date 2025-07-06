@@ -33,7 +33,7 @@ export const ChatProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     if (!token || socketRef.current) return;
 
-    const newSocket = io("http://localhost:5000", {
+    const newSocket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
       auth: { token },
       transports: ["websocket"],
       autoConnect: true,

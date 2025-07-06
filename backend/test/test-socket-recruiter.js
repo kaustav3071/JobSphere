@@ -3,7 +3,7 @@ import readline from "readline";
 import axios from "axios";
 
 const recruiterToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODZhMzI1ZDg4ZjY1NTE0ZDgxM2U5ZWEiLCJtb2RlbCI6IlJlY3J1aXRlciIsImlhdCI6MTc1MTc5MDUxMywiZXhwIjoxNzUxNzk0MTEzfQ.f_Nab2m6yaS5jxy1VDeaTugpI5egSvltbvPGw6RhYdI";
-const socket = io("http://localhost:5000", {
+const socket = io(process.env.BACKEND_URL || "http://localhost:5000", {
   auth: { token: recruiterToken },
   transports: ["websocket"],
 });
@@ -55,7 +55,7 @@ socket.on('disconnect', () => {
 rl.on("line", async (line) => {
   try {
     const response = await axios.post(
-      `http://localhost:5000/chats/${chatId}/message`,
+      `${process.env.BACKEND_URL || "http://localhost:5000"}/chats/${chatId}/message`,
       { content: line.trim() },
       { headers: { Authorization: `Bearer ${recruiterToken}` } }
     );
