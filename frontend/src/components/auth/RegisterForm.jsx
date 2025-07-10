@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useOnlineStatus } from "../../hooks/useNetworkStatus";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { register, recruiterRegister } from "../../services/authService";
+import ErrorBanner from "../common/ErrorBanner";
+import { ConnectionStatus } from "../common/LoadingComponents";
 import {
     Mail, Lock, User, Phone, MapPin, Building2, FileText, Users, Loader2, AlertCircle
 } from 'lucide-react';
@@ -10,6 +13,7 @@ import {
 const RegisterForm = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const isOnline = useOnlineStatus();
     const [form, setForm] = useState({
         role: "user",
         name: "",
@@ -37,11 +41,17 @@ const RegisterForm = () => {
         e.preventDefault();
         setError("");
         setSuccess("");
+        
+        // Check online status first
+        if (!isOnline) {
+            setError("No internet connection. Please check your network and try again.");
+            return;
+        }
+        
         setLoading(true);
         
         console.log('Form submission started:', {
             role: form.role,
-            apiUrl: import.meta.env.VITE_API_URL,
             hasResume: !!resume
         });
         
@@ -58,53 +68,23 @@ const RegisterForm = () => {
                 if (resume) formData.append("resume", resume);
                 
                 console.log('Sending user registration request...');
-                response = await fetch(`${import.meta.env.VITE_API_URL}/users/register`, {
-                    method: "POST",
-                    body: formData,
-                    credentials: "include",
-                });
+                response = await register(formData);
             } else {
                 // Recruiter: send JSON
                 console.log('Sending recruiter registration request...');
-                response = await fetch(`${import.meta.env.VITE_API_URL}/recruiters/register`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name: form.name,
-                        email: form.email,
-                        password: form.password,
-                        phone: form.phone,
-                        address: form.address,
-                        companyName: form.companyName,
-                    }),
-                    credentials: "include",
-                });
+                const recruiterData = {
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                    phone: form.phone,
+                    address: form.address,
+                    companyName: form.companyName,
+                };
+                response = await recruiterRegister(recruiterData);
             }
             
-            console.log('Response received:', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-            
-            // Check if response is ok before parsing JSON
-            if (!response.ok) {
-                // Try to get error message, but handle cases where response might not be JSON
-                let errorMessage = "Registration failed";
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                } catch (jsonError) {
-                    // If JSON parsing fails, use status text or generic message
-                    errorMessage = response.statusText || `Server error: ${response.status}`;
-                }
-                throw new Error(errorMessage);
-            }
-            
-            // Only parse JSON if response is ok
-            const data = await response.json();
-            setSuccess(data.message || "Registration successful! Please check your email to verify your account.");
+            console.log('Registration successful:', response);
+            setSuccess(response.message || "Registration successful! Please check your email to verify your account.");
             setForm({
                 role: "user",
                 name: "",
@@ -117,11 +97,28 @@ const RegisterForm = () => {
             setResume(null);
         } catch (err) {
             console.error("Registration error:", err);
+            
             // Handle different types of errors
-            if (err.name === 'TypeError' && err.message.includes('fetch')) {
-                setError("Unable to connect to server. Please check if the server is running.");
-            } else if (err.message.includes('JSON')) {
-                setError("Server returned an invalid response. Please try again.");
+            if (err.response) {
+                // Server responded with error status
+                const status = err.response.status;
+                const message = err.response.data?.message || err.response.statusText;
+                
+                if (status === 429) {
+                    setError("Too many requests. Please wait a moment and try again.");
+                } else if (status === 400) {
+                    setError(message || "Invalid information provided. Please check your details.");
+                } else if (status === 409) {
+                    setError(message || "An account with this email already exists.");
+                } else if (status >= 500) {
+                    setError("Server is temporarily unavailable. Please try again later.");
+                } else {
+                    setError(message || "Registration failed. Please try again.");
+                }
+            } else if (err.code === 'NETWORK_ERROR' || err.message.toLowerCase().includes('network')) {
+                setError("Network error. Please check your internet connection and try again.");
+            } else if (err.code === 'ECONNABORTED' || err.message.toLowerCase().includes('timeout')) {
+                setError("Request timed out. The server might be busy. Please try again in a moment.");
             } else {
                 setError(err.message || "Registration failed. Please try again.");
             }
@@ -130,20 +127,16 @@ const RegisterForm = () => {
         }
     };
 
+    const handleRetry = () => {
+        setError("");
+        // Re-submit the form
+        document.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Banner */}
-            {error && (
-                <div className="relative overflow-hidden">
-                    <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200/60 rounded-2xl shadow-sm backdrop-blur-sm">
-                        <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                        </div>
-                        <p className="text-red-800 text-sm font-medium leading-relaxed">{error}</p>
-                    </div>
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-400/10 to-pink-400/10 animate-pulse"></div>
-                </div>
-            )}
+            <ErrorBanner error={error} onRetry={handleRetry} />
             {success && (
                 <div className="relative overflow-hidden">
                     <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-2xl shadow-sm backdrop-blur-sm">
@@ -244,18 +237,23 @@ const RegisterForm = () => {
                 </div>
             )}
 
+            {/* Connection Status */}
+            <div className="flex justify-center">
+                <ConnectionStatus isOnline={isOnline} isConnecting={loading} />
+            </div>
+
             {/* Submit Button */}
             <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isOnline}
                 className={`
           relative w-full flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold text-white transition-all duration-300 transform shadow-lg hover:shadow-xl
-          ${loading
+          ${loading || !isOnline
                         ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed scale-[0.98]'
                         : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2'}
         `}
             >
-                {!loading && (
+                {!loading && isOnline && (
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-indigo-400/20 to-purple-400/20 animate-pulse"></div>
                 )}
                 <div className="relative flex items-center gap-2">
@@ -263,6 +261,10 @@ const RegisterForm = () => {
                         <>
                             <Loader2 className="w-5 h-5 animate-spin" />
                             <span>Registering...</span>
+                        </>
+                    ) : !isOnline ? (
+                        <>
+                            <span>⚠️ No Internet Connection</span>
                         </>
                     ) : (
                         <>
